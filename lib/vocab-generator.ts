@@ -1,9 +1,89 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-});
+const GEMINI_KEYS = [
+  process.env.GEMINI_API_KEY,
+  process.env.GEMINI_API_KEY2,
+].filter(Boolean) as string[];
+
+const GEMINI_MODELS = [
+  process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
+const cooldowns = new Map<string, number>();
+
+function isRetryableError(error: unknown) {
+  const text =
+    error instanceof Error ? error.message : JSON.stringify(error);
+
+  return (
+    text.includes("429") ||
+    text.includes("RESOURCE_EXHAUSTED") ||
+    text.includes("quota") ||
+    text.includes("503") ||
+    text.includes("overloaded")
+  );
+}
+
+async function generateWithFallback(
+  payload: Omit<
+    Parameters<GoogleGenAI["models"]["generateContent"]>[0],
+    "model"
+  >
+) {
+  let lastError: unknown;
+
+  for (const model of GEMINI_MODELS) {
+    // Randomize key order to distribute load
+    const startIndex = Math.floor(Math.random() * GEMINI_KEYS.length);
+
+    const rotatedKeys = [
+      ...GEMINI_KEYS.slice(startIndex),
+      ...GEMINI_KEYS.slice(0, startIndex),
+    ];
+
+    for (const key of rotatedKeys) {
+      const cooldownKey = `${model}:${key}`;
+
+      // Skip temporarily cooled-down key/model combos
+      if (Date.now() < (cooldowns.get(cooldownKey) ?? 0)) {
+        continue;
+      }
+
+      try {
+        console.log(`Trying Gemini model=${model}`);
+
+        const ai = new GoogleGenAI({
+          apiKey: key,
+        });
+
+        const response = await ai.models.generateContent({
+          model,
+          ...payload,
+        });
+
+        return response;
+      } catch (error) {
+        lastError = error;
+
+        console.warn(`Gemini failed for model=${model}`);
+
+        if (!isRetryableError(error)) {
+          throw error;
+        }
+
+        // Cool down this specific model+key pair for 60s
+        cooldowns.set(cooldownKey, Date.now() + 60_000);
+
+        console.warn(`Cooling down ${cooldownKey} for 60s`);
+      }
+    }
+  }
+
+  throw lastError;
+}
 
 export const vocabEntrySchema = z.object({
   term: z.string(),
@@ -42,7 +122,14 @@ const responseSchema = {
     },
     kind: {
       type: Type.STRING,
-      enum: ["WORD", "PHRASE", "IDIOM", "PHRASAL_VERB", "TECHNICAL_TERM", "OTHER"],
+      enum: [
+        "WORD",
+        "PHRASE",
+        "IDIOM",
+        "PHRASAL_VERB",
+        "TECHNICAL_TERM",
+        "OTHER",
+      ],
     },
     partOfSpeech: {
       type: Type.STRING,
@@ -66,7 +153,7 @@ const responseSchema = {
     synonyms: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "0 to 8 synonyms or close alternatives.",
+      description: "0 to 8 useful synonyms or close alternatives.",
     },
     mnemonic: {
       type: Type.STRING,
@@ -108,7 +195,9 @@ export async function generateVocabEntry(input: {
     "",
     `Term or phrase: ${input.term}`,
     `Normalized form: ${input.normalized}`,
-    input.sourceText ? `Source sentence/context: ${input.sourceText}` : null,
+    input.sourceText
+      ? `Source sentence/context: ${input.sourceText}`
+      : null,
     "",
     "Guidelines:",
     "- The input may be a word, phrase, idiom, phrasal verb, or technical term.",
@@ -125,13 +214,12 @@ export async function generateVocabEntry(input: {
     .filter(Boolean)
     .join("\n");
 
-  const response = await ai.models.generateContent({
-    model: process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
+  const response = await generateWithFallback({
     contents: prompt,
     config: {
       responseMimeType: "application/json",
       responseSchema,
-      temperature: 0.3,
+      temperature: 0.2,
     },
   });
 
@@ -141,6 +229,13 @@ export async function generateVocabEntry(input: {
     throw new Error("Gemini did not return a vocabulary entry.");
   }
 
-  const parsed = vocabEntrySchema.parse(JSON.parse(text));
-  return parsed;
+  let json: unknown;
+
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error("Gemini returned invalid JSON.");
+  }
+
+  return vocabEntrySchema.parse(json);
 }

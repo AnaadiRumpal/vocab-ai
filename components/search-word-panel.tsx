@@ -5,6 +5,8 @@ import type { VocabEntry } from "@/lib/vocab-generator";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { WordCard } from "./word-card";
+
 
 export function SearchWordPanel() {
   const [term, setTerm] = useState("");
@@ -66,7 +68,6 @@ export function SearchWordPanel() {
 
     setStatus("added");
   }
-
   return (
     <div className="flex flex-col gap-4">
       <Card>
@@ -105,58 +106,23 @@ export function SearchWordPanel() {
       </Card>
 
       {entry ? (
-        <Card>
-          <CardHeader className="gap-2">
-            <div className="flex flex-wrap gap-2">
-              <Badge variant="secondary">{entry.kind.replaceAll("_", " ")}</Badge>
-              <Badge variant="outline">Difficulty {entry.difficulty}</Badge>
-            </div>
-
-            <CardTitle className="text-2xl">{entry.term}</CardTitle>
-            <p className="text-sm text-muted-foreground">{entry.meaning}</p>
-          </CardHeader>
-
-          <CardContent className="space-y-4">
-            <p className="text-sm">{entry.plainEnglish}</p>
-
-            {entry.examples.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  Examples
-                </p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-muted-foreground">
-                  {entry.examples.map((example, index) => (
-                    <li key={index}>{example}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {entry.mnemonic ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-muted-foreground">
-                  Memory trick
-                </p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {entry.mnemonic}
-                </p>
-              </div>
-            ) : null}
-
-            <Button
-              type="button"
-              disabled={status === "adding" || status === "added"}
-              onClick={addToWords}
-              className="w-full"
-            >
-              {status === "adding"
+        <WordCard
+          word={{
+            ...entry,
+            examples: entry.examples ?? [],
+            synonyms: entry.synonyms ?? [],
+          }}
+          action={{
+            label:
+              status === "adding"
                 ? "Adding..."
                 : status === "added"
                   ? "Added to words"
-                  : "Add to Words"}
-            </Button>
-          </CardContent>
-        </Card>
+                  : "Add to Words",
+            disabled: status === "adding" || status === "added",
+            onClick: addToWords,
+          }}
+        />
       ) : null}
     </div>
   );

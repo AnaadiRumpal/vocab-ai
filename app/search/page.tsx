@@ -15,18 +15,18 @@ export default async function SearchPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-6">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
-        <header className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">Lookup</p>
-            <h1 className="text-2xl font-semibold">Search word or phrase</h1>
-          </div>
-
-          <Button asChild variant="outline" size="sm">
+        <header className="flex items-center gap-3">
+                    <Button asChild variant="outline" size="sm">
             <Link href="/" className="inline-flex items-center gap-2">
               <ArrowLeft className="h-4 w-4" />
               Home
             </Link>
           </Button>
+
+          <div>
+            <p className="text-sm text-muted-foreground">Lookup</p>
+            <h1 className="text-2xl font-semibold">Search word or phrase</h1>
+          </div>
         </header>
 
         <SearchWordPanel />

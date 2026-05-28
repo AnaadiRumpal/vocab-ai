@@ -10,8 +10,9 @@ import { WordsFilterBar } from "@/components/words-filter-bar";
 import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { WordCard } from "@/components/word-card";
 
-const PAGE_SIZE = 3;
+const PAGE_SIZE = 10;
 
 const STATUSES = ["NEW", "LEARNING", "REVIEWING", "MASTERED", "ARCHIVED"] as const;
 const KINDS = ["WORD", "PHRASE", "IDIOM", "PHRASAL_VERB", "TECHNICAL_TERM", "OTHER"] as const;
@@ -208,7 +209,6 @@ export default async function WordsPage({
             <h1 className="text-2xl font-semibold tracking-tight">Your words</h1>
           </div>
         </header>
-
         <WordsFilterBar q={q} status={status} kind={kind} due={due} />
 
         <div className="text-sm text-muted-foreground">
@@ -227,112 +227,53 @@ export default async function WordsPage({
             {words.map((word) => {
               const examples = toStringArray(word.examples);
               const synonyms = toStringArray(word.synonyms);
-              const difficultyBadge = getDifficultyBadge(word.difficulty);
+
               return (
-                <Card key={word.id}>
-                  <CardHeader className="gap-2">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <CardTitle className="break-words text-xl">
-                          {word.term}
-                        </CardTitle>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {word.meaning}
-                        </p>
-                      </div>
-
-                      <DeleteWordButton wordId={word.id} term={word.term} />
-                    </div>
-
-                    <WordMetaBadges
-                    badges={[
-                        {
-                        label: word.kind.replaceAll("_", " "),
-                        variant: "secondary",
-                        },
-                        {
-                        label: word.status,
-                        variant: "outline",
-                        },
-                        {
-                        label: difficultyBadge.label,
-                        variant: "outline",
-                        className: difficultyBadge.className,
-                        },
-                        {
-                        label: `Reviewed ${word.reviewCount}x`,
-                        variant: "outline",
-                        },
-                        {
-                        label: `Created: ${formatDate(word.createdAt)}`,
-                        variant: "outline",
-                        },
-                        {
-                        label: `Due: ${formatDateTime(word.dueAt)}`,
-                        variant: "outline",
-                        },
-                    ]}
-                    />
-                  </CardHeader>
-
-                  <CardContent className="flex flex-col gap-3">
-                    {word.plainEnglish ? (
-                      <p className="text-sm">{word.plainEnglish}</p>
-                    ) : null}
-
-
-                    {examples.length > 0 ? (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium uppercase text-muted-foreground">
-                          Examples
-                        </p>
-                        <ul className="list-inside list-disc text-sm text-muted-foreground">
-                          {examples.slice(0, 2).map((example, index) => (
-                            <li key={index}>{example}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-
-                    {synonyms.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {synonyms.slice(0, 6).map((synonym, index) => (
-                          <Badge key={index} variant="outline">
-                            {synonym}
-                          </Badge>
-                        ))}
-                      </div>
-                    ) : null}
-
-                  </CardContent>
-                </Card>
+                <WordCard
+                  key={word.id}
+                  word={{
+                    id: word.id,
+                    term: word.term,
+                    kind: word.kind,
+                    meaning: word.meaning,
+                    plainEnglish: word.plainEnglish,
+                    examples,
+                    synonyms,
+                    mnemonic: word.mnemonic,
+                    difficulty: word.difficulty,
+                    status: word.status,
+                    reviewCount: word.reviewCount,
+                    createdAt: word.createdAt,
+                    dueAt: word.dueAt,
+                  }}
+                  showDelete
+                  showMeta
+                />
               );
             })}
           </div>
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <Button asChild variant="outline" disabled={page <= 1}>
-            <Link
-              href={pageHref(Math.max(1, page - 1))}
-              aria-disabled={page <= 1}
-            >
-              Previous
-            </Link>
-          </Button>
+          {page > 1 ? (
+            <Button asChild variant="outline">
+              <Link href={pageHref(page - 1)}>Previous</Link>
+            </Button>
+          ) : (
+            <div />
+          )}
 
           <p className="text-sm text-muted-foreground">
             Page {page} of {totalPages}
           </p>
 
-          <Button asChild variant="outline" disabled={page >= totalPages}>
-            <Link
-              href={pageHref(Math.min(totalPages, page + 1))}
-              aria-disabled={page >= totalPages}
-            >
-              Next
-            </Link>
-          </Button>
+          {page < totalPages ? (
+            <Button asChild variant="outline">
+              <Link href={pageHref(page + 1)}>Next</Link>
+            </Button>
+          ) : (
+            <div />
+          )}
         </div>
       </div>
     </main>

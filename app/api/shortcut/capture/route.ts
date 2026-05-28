@@ -40,13 +40,42 @@ export async function POST(request: NextRequest) {
       { status: 401 }
     );
   }
+  const body = await request.json().catch((error) => {
+    console.log("JSON parse failed:", error);
+    return null;
+  });
 
-  const body = await request.json().catch(() => null);
-  const parsed = vocabEntrySchema.safeParse(body?.entry);
+  console.log("Shortcut capture body JSON:", JSON.stringify(body, null, 2));
+
+  let candidate = body?.entry ?? body;
+
+  if (typeof candidate === "string") {
+    try {
+      candidate = JSON.parse(candidate);
+    } catch {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "Invalid vocabulary entry JSON string.",
+          received: body,
+        },
+        { status: 400 }
+      );
+    }
+  }
+
+  const parsed = vocabEntrySchema.safeParse(candidate);
 
   if (!parsed.success) {
+    console.log("Validation error:", parsed.error.flatten());
+
     return NextResponse.json(
-      { ok: false, error: "Invalid vocabulary entry." },
+      {
+        ok: false,
+        error: "Invalid vocabulary entry.",
+        details: parsed.error.flatten(),
+        received: body,
+      },
       { status: 400 }
     );
   }
