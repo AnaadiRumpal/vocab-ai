@@ -46,17 +46,17 @@ export default async function SettingsPage() {
         <div className="rounded-lg border bg-muted/40 p-4">
         <p className="text-sm font-medium">How iPhone capture works</p>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Your iPhone Shortcut will send selected text to this app using a private
+            Your iPhone Shortcut will send clipboard text to this app using a private
             capture token. You do not need to log in from the Shortcut. Copy the endpoint
             and token below, then create a Shortcut that accepts selected text from the
             Share Sheet and sends it as a POST request.
         </p>
 
         <ol className="mt-3 list-inside list-decimal space-y-1 text-sm text-muted-foreground">
-            <li>Select a word or phrase on your iPhone.</li>
-            <li>Share it to your vocabulary Shortcut.</li>
-            <li>The Shortcut sends it to the endpoint below.</li>
-            <li>The app enriches it with AI and saves it to your deck.</li>
+            <li>Select a word or phrase on your iPhone/iPad/Mac and copy it.</li>
+            <li>Run your vocabulary Shortcut. (You can add it to control center)</li>
+            <li>The Shortcut selects the word from your clipboard sends it to the endpoint below.</li>
+            <li>The app enriches it with AI and saves it to your vocabulary which you can later revise with flashcards.</li>
         </ol>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">

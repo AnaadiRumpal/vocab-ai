@@ -63,9 +63,7 @@ export default async function ReviewPage() {
               Due cards
             </h1>
           </div>
-            <div className="ml-auto">
-              <ReviewInfoDialog />
-            </div>
+          <ReviewInfoDialog />
         </header>
 
         {reviewCards.length === 0 ? (
