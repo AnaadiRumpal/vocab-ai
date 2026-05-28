@@ -34,17 +34,29 @@ export default async function Home() {
         {isLoggedIn ? (
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Button asChild variant="outline" className="flex-1">
-                <Link href="/review">Review</Link>
-              </Button>
+            <Button
+                  asChild
+                  variant="outline"
+                  className="flex-1 min-h-12 text-base"
+                >
+                  <Link href="/review">Review</Link>
+            </Button>
 
-              <Button asChild variant="outline" className="flex-1">
-                <Link href="/words">Saved Words</Link>
-              </Button>
+            <Button
+                  asChild
+                  variant="outline"
+                  className="flex-1 min-h-12 text-base"
+                >
+                  <Link href="/words">Saved Words</Link>
+            </Button>
 
-              <Button asChild className="flex-1">
-                <Link href="/search">Search Word</Link>
-              </Button>
+            <Button
+                  asChild
+                  className="flex-1 min-h-12 text-base"
+                >
+                  <Link href="/search">Search Word</Link>
+            </Button>
+  
             </div>
 
             <p className="text-sm leading-6 text-muted-foreground">
