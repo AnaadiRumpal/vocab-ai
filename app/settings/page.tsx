@@ -1,7 +1,7 @@
 // app/settings/page.tsx
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Smartphone } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
@@ -59,12 +59,45 @@ export default async function SettingsPage() {
             <li>The app enriches it with AI and saves it to your deck.</li>
         </ol>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>iPhone Shortcut API</CardTitle>
-          </CardHeader>
-          
-            
+        <div className="flex flex-col gap-3 sm:flex-row">
+        <Button
+          asChild
+          size="lg"
+          className="
+            h-12
+            flex-1
+            gap-2
+            rounded-xl
+            shadow-sm
+            transition-all
+            duration-200
+            hover:scale-[1.01]
+            hover:shadow-md
+          "
+        >
+          <a
+            href="https://www.icloud.com/shortcuts/a040e8755075454fb368d00cbc493ca1"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Download className="h-4 w-4" />
+            Download Shortcut
+          </a>
+        </Button>
+
+        <div
+          className="
+            flex items-center justify-center gap-2
+            rounded-xl border bg-muted/40
+            px-4 py-3
+            text-sm text-muted-foreground
+          "
+        >
+          <Smartphone className="h-4 w-4" />
+          iOS & macOS
+        </div>
+      </div>
+        <Card>       
           <CardContent className="space-y-4">
             <div>
               <p className="text-sm font-medium">Signed in as</p>
