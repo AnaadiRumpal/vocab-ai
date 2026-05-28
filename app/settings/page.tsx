@@ -76,7 +76,7 @@ export default async function SettingsPage() {
           "
         >
           <a
-            href="https://www.icloud.com/shortcuts/a040e8755075454fb368d00cbc493ca1"
+            href={process.env.SHORTCUT_URL}
             target="_blank"
             rel="noopener noreferrer"
           >

@@ -29,7 +29,9 @@ export function WordMetaBadges({ badges }: { badges: WordMetaBadge[] }) {
       {!expanded && hiddenCount > 0 ? (
         <button
           type="button"
-          onClick={() => setExpanded(true)}
+          onClick={(event) => {
+            setExpanded(true);
+            event.stopPropagation()}}
           className="rounded-full"
           aria-label={`Show ${hiddenCount} more details`}
         >
