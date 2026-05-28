@@ -11,6 +11,7 @@ import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { WordCard } from "@/components/word-card";
+import { LoadingLinkButton } from "@/components/loading-link-button";
 
 const PAGE_SIZE = 10;
 
@@ -198,12 +199,17 @@ export default async function WordsPage({
     <main className="min-h-screen bg-background px-4 py-6">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
         <header className="flex items-center font-sans gap-3">
-            <Button asChild variant="outline" size="sm">
-            <Link href="/" className="gap-2">
+            <LoadingLinkButton
+              href="/"
+              variant="outline"
+              size="sm"
+              className="inline-flex cursor-pointer items-center gap-2"
+            >
+              <>
                 <ArrowLeft className="h-4 w-4" />
                 Home
-            </Link>
-            </Button>
+              </>
+            </LoadingLinkButton>
           <div>
             <p className="text-sm text-muted-foreground">Vocabulary</p>
             <h1 className="text-2xl font-semibold tracking-tight">Your words</h1>

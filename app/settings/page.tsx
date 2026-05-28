@@ -7,6 +7,8 @@ import { db } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CopyTokenButton } from "@/components/copy-token-button";
+import { LoadingLinkButton } from "@/components/loading-link-button";
+import { LoadingNavButton } from "@/components/loading-nav-button";
 
 export default async function SettingsPage() {
   const session = await auth();
@@ -31,12 +33,17 @@ export default async function SettingsPage() {
     <main className="min-h-screen bg-background px-4 py-6">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5">
         <header className="flex flex-col items-start gap-5 justify-between">
-            <Button asChild variant="outline" size="sm">
-            <Link href="/" className="inline-flex items-center gap-2">
-              <ArrowLeft className="h-4 w-4" />
-              Home
-            </Link>
-          </Button>
+            <LoadingLinkButton
+              href="/"
+              variant="outline"
+              size="sm"
+              className="inline-flex cursor-pointer items-center gap-2"
+            >
+              <>
+                <ArrowLeft className="h-4 w-4" />
+                Home
+              </>
+            </LoadingLinkButton>
           <div>
             <p className="text-sm text-muted-foreground">Settings</p>
             <h1 className="text-2xl font-semibold">Capture setup</h1>
@@ -60,9 +67,8 @@ export default async function SettingsPage() {
         </ol>
         </div>
         <div className="flex flex-col gap-3 sm:flex-row">
-        <Button
-          asChild
-          size="lg"
+        <LoadingNavButton
+          href={process.env.SHORTCUT_URL!}
           className="
             h-12
             flex-1
@@ -74,16 +80,13 @@ export default async function SettingsPage() {
             hover:scale-[1.01]
             hover:shadow-md
           "
+          external
         >
-          <a
-            href={process.env.SHORTCUT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <>
             <Download className="h-4 w-4" />
             Download Shortcut
-          </a>
-        </Button>
+          </>
+        </LoadingNavButton>
 
         <div
           className="

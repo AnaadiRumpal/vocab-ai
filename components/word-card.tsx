@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,12 +69,16 @@ type WordCardProps = {
 
   showDelete?: boolean;
   showMeta?: boolean;
+  defaultExpanded?: boolean;
 
   action?: {
     label: string;
     loadingLabel?: string;
+    successLabel?: string;
     disabled?: boolean;
-    onClick?: () => void;
+    loading?: boolean;
+    success?: boolean;
+    onClick?: () => Promise<void> | void;
   };
 };
 
@@ -100,38 +104,44 @@ export function WordCard({
   word,
   showDelete = false,
   showMeta = false,
+  defaultExpanded = false,
   action,
 }: WordCardProps) {
-  const [expanded, setExpanded] = useState(false);
-
+  const [expanded, setExpanded] = useState(defaultExpanded);
+  const [isRemoving, setIsRemoving] = useState(false);
   const difficultyBadge = getDifficultyBadge(word.difficulty);
 
   return (
     <Card
         onClick={() => setExpanded((value) => !value)}
-        className="
-            group
-            relative
-            w-full
-            cursor-pointer
-            overflow-hidden
-            rounded-2xl
-            border
-            bg-gradient-to-b
-            from-background
-            to-muted/20
-            text-left
-            transition-all
-            duration-300
-            ease-out
+        className={[
+          `
+          group
+          relative
+          w-full
+          cursor-pointer
+          overflow-hidden
+          rounded-2xl
+          border
+          bg-gradient-to-b
+          from-background
+          to-muted/20
+          text-left
+          transition-all
+          duration-500
+          ease-[cubic-bezier(0.22,1,0.36,1)]
 
-            hover:-translate-y-[2px]
-            hover:border-primary/20
-            hover:bg-muted/[0.045]
-            hover:shadow-[0_10px_35px_rgba(0,0,0,0.06)]
+          hover:-translate-y-[2px]
+          hover:border-primary/20
+          hover:bg-muted/[0.045]
+          hover:shadow-[0_10px_35px_rgba(0,0,0,0.06)]
 
-            active:scale-[0.995]
-            "
+          active:scale-[0.995]
+          `,
+          isRemoving
+            ? "scale-[0.96] opacity-0 blur-[1px] -translate-y-4"
+            : "scale-100 opacity-100 blur-0 translate-y-0",
+        ].join(" ")}
     >
         <CardHeader className="gap-3">
           <div className="flex items-start justify-between gap-3">
@@ -273,11 +283,38 @@ export function WordCard({
             {action ? (
               <Button
                 type="button"
-                disabled={action.disabled}
-                onClick={action.onClick}
-                className="mt-2 w-full"
+                disabled={action.disabled || action.loading || action.success}
+                onClick={async (event) => {
+                  event.stopPropagation();
+
+                  await action.onClick?.();
+
+                  if (action.success) {
+                    setTimeout(() => {
+                      setIsRemoving(true);
+                    }, 350);
+                  }
+                }}
+                className="
+                  mt-2
+                  w-fit
+                  min-w-[120px]
+                  self-start
+                  rounded-xl
+                  transition-all
+                  duration-300
+                "
               >
-                {action.label}
+                {action.loading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : action.success ? (
+                  <div className="flex items-center gap-2 animate-in zoom-in duration-300">
+                    <Check className="h-4 w-4" />
+                    Added
+                  </div>
+                ) : (
+                  action.label
+                )}
               </Button>
             ) : null}
           </CardContent>

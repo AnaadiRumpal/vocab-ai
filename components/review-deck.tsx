@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check } from "lucide-react";
 
 type ReviewRating = "FORGOT" | "HARD" | "GOOD" | "EASY";
 
@@ -21,8 +22,13 @@ export type ReviewDeckCard = {
 };
 
 
-export function ReviewDeck({ words }: { words: ReviewDeckCard[] }) {
-  const [queue, setQueue] = useState<ReviewDeckCard[]>(words);
+export function ReviewDeck({
+  words,
+  totalDueCount,
+}: {
+  words: ReviewDeckCard[];
+  totalDueCount: number;
+}) {  const [queue, setQueue] = useState<ReviewDeckCard[]>(words);
   const [completedCount, setCompletedCount] = useState(0);
   const [pending, setPending] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -97,38 +103,176 @@ export function ReviewDeck({ words }: { words: ReviewDeckCard[] }) {
   }
 
   if (!current) {
+    const remainingOutsideSession =
+      totalDueCount - completedCount;
+
     return (
-      <Card>
-        <CardContent className="py-10 text-center text-sm text-muted-foreground">
-          Review session complete.
+      <Card
+        className="
+          overflow-hidden
+          border-primary/20
+          bg-gradient-to-b
+          from-primary/[0.05]
+          to-background
+        "
+      >
+        <CardContent className="flex flex-col items-center py-14 text-center">
+          <div
+            className="
+              mb-5
+              flex h-20 w-20 items-center justify-center
+              rounded-full
+              bg-primary/10
+              animate-in zoom-in duration-500
+            "
+          >
+            <Check className="h-10 w-10 text-primary" />
+          </div>
+
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Round complete ✨
+          </h2>
+
+          <p className="mt-3 max-w-xs text-sm leading-6 text-muted-foreground">
+            You reviewed {completedCount} word
+            {completedCount === 1 ? "" : "s"} this round.
+          </p>
+
+          {remainingOutsideSession > 0 ? (
+            <>
+              <div
+                className="
+                  mt-5
+                  rounded-xl
+                  border
+                  bg-muted/40
+                  px-4
+                  py-3
+                  text-sm
+                "
+              >
+                {remainingOutsideSession} more waiting today
+              </div>
+
+              <Button
+                className="mt-5 w-full"
+                onClick={() => window.location.reload()}
+              >
+                Start next round
+              </Button>
+            </>
+          ) : (
+            <div
+              className="
+                mt-5
+                rounded-xl
+                border
+                bg-primary/[0.04]
+                px-4
+                py-3
+                text-sm
+                text-muted-foreground
+              "
+            >
+              You’re fully caught up for today 🎉
+            </div>
+          )}
         </CardContent>
       </Card>
     );
   }
+  const sessionCardCount = words.length;
+
+  const totalCardsLeft =
+    totalDueCount - completedCount;
+
+  const progress =
+    sessionCardCount === 0
+      ? 100
+      : (completedCount / sessionCardCount) * 100;
 
   return (
     <>
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>
-          {queue.length} card{queue.length === 1 ? "" : "s"} in session
-        </span>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium">
+              {queue.length} word
+              {queue.length === 1 ? "" : "s"} left in this round
+            </p>
 
-        <span>{completedCount} done</span>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {totalCardsLeft > queue.length
+                ? `${totalCardsLeft} total waiting today`
+                : "You’re on your final round today"}
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="text-sm font-semibold">
+              {Math.round(progress)}%
+            </p>
+
+            <p className="text-xs text-muted-foreground">
+              cleared
+            </p>
+          </div>
+        </div>
+
+        <div className="h-2 overflow-hidden rounded-full bg-muted">
+          <div
+            className="
+              h-full
+              rounded-full
+              bg-gradient-to-r
+              from-primary
+              to-primary/70
+              shadow-[0_0_18px_rgba(99,102,241,0.35)]
+              transition-all
+              duration-500
+              ease-out
+            "
+            style={{
+              width: `${progress}%`,
+            }}
+          />
+        </div>
+
+        {queue.length <= 5 ? (
+          <div
+            className="
+              rounded-xl
+              border
+              bg-primary/[0.03]
+              px-3
+              py-2
+              text-xs
+              text-muted-foreground
+              animate-in fade-in duration-500
+            "
+          >
+            {queue.length === 1
+              ? "Last word. Finish strong ✨"
+              : queue.length <= 3
+              ? "Final stretch 🔥"
+              : "You’re almost done"}
+          </div>
+        ) : null}
       </div>
       <Card
         className={[
           `
           transition-all
-          duration-200
+          duration-300
           ease-out
           will-change-transform
           `,
           current.isRetry
             ? "border-2 border-amber-500 shadow-sm shadow-amber-500/20"
             : "",
-          isExiting
-            ? "-translate-x-16 opacity-0 rotate-[-6deg] scale-[0.98]"
-            : "translate-x-0 opacity-100 rotate-0 scale-100",
+            isExiting
+            ? "-translate-x-24 rotate-[-10deg] scale-[0.94] opacity-0 blur-[1px]"
+            : "translate-x-0 rotate-0 scale-100 opacity-100 blur-0",
         ].join(" ")}
       >
         <CardHeader className="text-center">
@@ -174,8 +318,8 @@ export function ReviewDeck({ words }: { words: ReviewDeckCard[] }) {
                 animate-[softReveal_3s_ease-in-out_infinite]
               "
             >
-              <span className="tracking-[0.28em] font-semibold text-sm">
-                REVEAL
+              <span className="tracking-wide font-semibold text-sm">
+                Reveal meaning
               </span>
             </Button>
           ) : (

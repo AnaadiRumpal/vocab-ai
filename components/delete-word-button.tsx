@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 
 export function DeleteWordButton({
@@ -45,9 +46,20 @@ export function DeleteWordButton({
       onClick={handleDelete}
       aria-label={`Delete ${term}`}
       title={`Delete ${term}`}
-      className="h-8 w-8 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+      className="
+        h-8 w-8 shrink-0
+        text-muted-foreground
+        transition-all duration-200
+        hover:bg-destructive/10
+        hover:text-destructive
+        disabled:opacity-100
+      "
     >
-      <Trash2 className="h-4 w-4" />
+      {isPending ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Trash2 className="h-4 w-4" />
+      )}
     </Button>
   );
 }

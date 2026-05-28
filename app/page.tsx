@@ -1,8 +1,7 @@
-import Link from "next/link";
 import { Settings } from "lucide-react";
 import { auth } from "@/auth";
 import { AuthButtons } from "@/components/auth-buttons";
-import { Button } from "@/components/ui/button";
+import { LoadingNavButton } from "@/components/loading-nav-button";
 
 export default async function Home() {
   const session = await auth();
@@ -14,11 +13,15 @@ export default async function Home() {
         <AuthButtons />
 
         {isLoggedIn ? (
-          <Button asChild variant="outline" size="icon">
-            <Link href="/settings" aria-label="Settings">
-              <Settings className="h-4 w-4" />
-            </Link>
-          </Button>
+          <LoadingNavButton
+            href="/settings"
+            variant="outline"
+            aria-label="Settings"
+            preserveDefaultSize={false}
+            className="shrink-0"
+          >
+            <Settings className="h-4 w-4" />
+          </LoadingNavButton>
         ) : null}
       </div>
 
@@ -34,28 +37,17 @@ export default async function Home() {
         {isLoggedIn ? (
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row">
-            <Button
-                  asChild
-                  variant="outline"
-                  className="flex-1 min-h-12 text-base"
-                >
-                  <Link href="/review">Review</Link>
-            </Button>
+            <LoadingNavButton href="/review" variant="outline">
+              Review
+            </LoadingNavButton>
 
-            <Button
-                  asChild
-                  variant="outline"
-                  className="flex-1 min-h-12 text-base"
-                >
-                  <Link href="/words">Saved Words</Link>
-            </Button>
+            <LoadingNavButton href="/words" variant="outline">
+              Saved Words
+            </LoadingNavButton>
 
-            <Button
-                  asChild
-                  className="flex-1 min-h-12 text-base"
-                >
-                  <Link href="/search">Search Word</Link>
-            </Button>
+            <LoadingNavButton href="/search">
+              Search Word
+            </LoadingNavButton>
   
             </div>
 
