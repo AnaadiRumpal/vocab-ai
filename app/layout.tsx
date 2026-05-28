@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Vocab AI",
+  title: "Vocabulary AI",
   description: "Personal AI vocabulary learning system",
 };
 

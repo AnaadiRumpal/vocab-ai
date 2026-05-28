@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { ArrowLeft } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { ReviewInfoDialog } from "@/components/review-info-dialog";
 
 function toStringArray(value: unknown) {
   return Array.isArray(value) ? value.map(String) : [];
@@ -62,6 +63,9 @@ export default async function ReviewPage() {
               Due cards
             </h1>
           </div>
+            <div className="ml-auto">
+              <ReviewInfoDialog />
+            </div>
         </header>
 
         {reviewCards.length === 0 ? (
