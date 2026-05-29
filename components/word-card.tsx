@@ -26,7 +26,7 @@ function getDifficultyBadge(difficulty: number | null) {
   if (difficulty === 3) {
     return {
       label: "Intermediate",
-      className: "border-amber-200 bg-amber-50 text-amber-700",
+      className: "border-violet-200 bg-violet-50 text-amber-700",
     };
   }
 
@@ -141,7 +141,6 @@ export function WordCard({
   const [expanded, setExpanded] = useState(defaultExpanded);
   const [isRemoving, setIsRemoving] = useState(false);
   const difficultyBadge = getDifficultyBadge(word.difficulty);
-
   return (
     <Card
         onClick={() => setExpanded((value) => !value)}
@@ -149,26 +148,45 @@ export function WordCard({
           `
           group
           relative
+          overflow-hidden
           w-full
           cursor-pointer
-          overflow-hidden
           rounded-2xl
           border
-          bg-gradient-to-b
-          from-background
-          to-muted/20
+
+          bg-background/60
+          backdrop-blur-sm
+
           text-left
+
           transition-all
           duration-500
           ease-[cubic-bezier(0.22,1,0.36,1)]
 
           hover:-translate-y-[2px]
           hover:border-primary/20
-          hover:bg-muted/[0.045]
           hover:shadow-[0_10px_35px_rgba(0,0,0,0.06)]
 
           active:scale-[0.995]
+
+          before:content-['']
+          before:absolute
+          before:inset-0
+          before:block
+          before:z-0
           `,
+          word.difficulty === 1
+          ? "before:bg-emerald-500/5"
+          : word.difficulty === 2
+          ? "before:bg-sky-500/5"
+          : word.difficulty === 3
+          ? "before:bg-violet-500/5"
+          : word.difficulty === 4
+          ? "before:bg-pink-500/5"
+          : word.difficulty === 5
+          ? "before:bg-rose-500/5"
+          : "before:bg-primary/5",
+
           isRemoving
             ? "scale-[0.96] opacity-0 blur-[1px] -translate-y-4"
             : "scale-100 opacity-100 blur-0 translate-y-0",

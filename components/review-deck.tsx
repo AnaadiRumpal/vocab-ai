@@ -8,7 +8,6 @@ import { Check, Volume2 } from "lucide-react";
 
 type ReviewRating = "FORGOT" | "HARD" | "GOOD" | "EASY";
 
-
 export type ReviewDeckCard = {
   id: string;
   term: string;
@@ -21,6 +20,48 @@ export type ReviewDeckCard = {
   difficulty: number | null;
   isRetry?: boolean;
 };
+
+function getDifficultyBadge(difficulty: number | null) {
+  if (difficulty === 1) {
+    return {
+      label: "Common",
+      className: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    };
+  }
+
+  if (difficulty === 2) {
+    return {
+      label: "Familiar",
+      className: "border-sky-200 bg-sky-50 text-sky-700",
+    };
+  }
+
+  if (difficulty === 3) {
+    return {
+      label: "Intermediate",
+      className: "border-violet-200 bg-violet-50 text-amber-700",
+    };
+  }
+
+  if (difficulty === 4) {
+    return {
+      label: "Advanced",
+      className: "border-orange-200 bg-orange-50 text-orange-700",
+    };
+  }
+
+  if (difficulty === 5) {
+    return {
+      label: "Rare",
+      className: "border-rose-200 bg-rose-50 text-rose-700",
+    };
+  }
+
+  return {
+    label: "Unrated",
+    className: "border-muted bg-muted/40 text-muted-foreground",
+  };
+}
 
 function speakWord(word: string) {
   if (typeof window === "undefined") return;
@@ -215,6 +256,8 @@ export function ReviewDeck({
       ? 100
       : (completedCount / sessionCardCount) * 100;
 
+  const difficultyBadge = getDifficultyBadge(current.difficulty);
+
   return (
     <>
       <div className="space-y-3">
@@ -290,7 +333,28 @@ export function ReviewDeck({
           duration-300
           ease-out
           will-change-transform
+          relative
+          overflow-hidden
+          
+          before:absolute
+          before:inset-0
+          before:bg-gradient-to-br
+          before:via-transparent
+          before:to-muted/10
+          before:opacity-70
+          before:pointer-events-none
           `,
+          current.difficulty === 1
+          ? "before:bg-emerald-500/5"
+          : current.difficulty === 2
+          ? "before:bg-sky-500/5"
+          : current.difficulty === 3
+          ? "before:bg-violet-500/5"
+          : current.difficulty === 4
+          ? "before:bg-pink-500/5"
+          : current.difficulty === 5
+          ? "before:bg-rose-500/5"
+          : "before:bg-primary/5",
           current.isRetry
             ? "border-2 border-amber-500 shadow-sm shadow-amber-500/20"
             : "",
@@ -303,6 +367,10 @@ export function ReviewDeck({
           <div className="mb-2 flex justify-center gap-2">
             <Badge variant="secondary">
               {current.kind.replaceAll("_", " ")}
+            </Badge>
+
+            <Badge variant="outline" className={difficultyBadge.className}>
+              {difficultyBadge.label}
             </Badge>
 
             {current.isRetry ? (
