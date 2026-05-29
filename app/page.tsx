@@ -2,10 +2,28 @@ import { Settings } from "lucide-react";
 import { auth } from "@/auth";
 import { AuthButtons } from "@/components/auth-buttons";
 import { LoadingNavButton } from "@/components/loading-nav-button";
+import { db } from "@/lib/db";
+import { WordStatus } from "@/app/generated/prisma/client";
 
 export default async function Home() {
   const session = await auth();
   const isLoggedIn = Boolean(session?.user);
+
+  let dueCount = 0;
+
+  if (session?.user?.id) {
+    dueCount = await db.word.count({
+      where: {
+        userId: session.user.id,
+        status: {
+          not: WordStatus.ARCHIVED,
+        },
+        dueAt: {
+          lte: new Date(),
+        },
+      },
+    });
+  }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-4">
@@ -37,18 +55,44 @@ export default async function Home() {
         {isLoggedIn ? (
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row">
-            <LoadingNavButton href="/review" variant="outline">
-              Review
-            </LoadingNavButton>
+              <div className="relative flex-1">
+                <LoadingNavButton
+                  href="/review"
+                  variant="outline"
+                  className="w-full"
+                >
+                  Review
+                </LoadingNavButton>
 
-            <LoadingNavButton href="/words" variant="outline">
-              Saved Words
-            </LoadingNavButton>
+                {dueCount > 0 ? (
+                  <div
+                    className="
+                      absolute -right-2 -top-2
+                      flex h-6 min-w-6 items-center justify-center
+                      rounded-full bg-primary px-1.5
+                      text-xs font-semibold text-primary-foreground
+                      shadow-sm
+                    "
+                  >
+                    {dueCount > 99 ? "99+" : dueCount}
+                  </div>
+                ) : null}
+              </div>
 
-            <LoadingNavButton href="/search">
-              Search Word
-            </LoadingNavButton>
-  
+              <LoadingNavButton
+                href="/words"
+                variant="outline"
+                className="flex-1"
+              >
+                Saved Words
+              </LoadingNavButton>
+
+              <LoadingNavButton
+                href="/search"
+                className="flex-1"
+              >
+                Search Word
+              </LoadingNavButton>
             </div>
 
             <p className="text-sm leading-6 text-muted-foreground">
