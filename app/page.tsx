@@ -12,6 +12,7 @@ export default async function Home() {
   let dueCount = 0;
 
   if (session?.user?.id) {
+    const now = new Date();
     dueCount = await db.word.count({
       where: {
         userId: session.user.id,
@@ -19,7 +20,15 @@ export default async function Home() {
           not: WordStatus.ARCHIVED,
         },
         dueAt: {
-          lte: new Date(),
+          lte: new Date(
+                now.getFullYear(),
+                now.getMonth(),
+                now.getDate(),
+                23,
+                59,
+                59,
+                999
+              ),
         },
       },
     });

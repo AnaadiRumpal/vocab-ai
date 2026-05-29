@@ -22,6 +22,7 @@ export default async function ReviewPage() {
     }
 
     const userId = session.user.id;
+    const now = new Date();
 
     const dueWhere = {
       userId,
@@ -29,7 +30,15 @@ export default async function ReviewPage() {
         not: WordStatus.ARCHIVED,
       },
       dueAt: {
-        lte: new Date(),
+        lte: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999
+          )
       },
     };
 

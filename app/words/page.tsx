@@ -88,16 +88,33 @@ export default async function WordsPage({
   ) {
     where.kind = kind as (typeof KINDS)[number];
   }
+  const now = new Date();
 
   if (due === "DUE") {
     where.dueAt = {
-      lte: new Date(),
+      lte:  new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999
+          )
     };
   }
 
   if (due === "FUTURE") {
     where.dueAt = {
-      gt: new Date(),
+      gt: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            23,
+            59,
+            59,
+            999
+          )
     };
   }
 
