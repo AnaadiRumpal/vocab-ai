@@ -174,6 +174,7 @@ export function WordCard({
           before:inset-0
           before:block
           before:z-0
+          before:pointer-events-none
           `,
           word.difficulty === 1
           ? "before:bg-emerald-500/5"
