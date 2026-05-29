@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Loader2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -100,6 +100,37 @@ function formatDateTime(date: Date | string) {
   }).format(new Date(date));
 }
 
+function speakWord(word: string) {
+  if (typeof window === "undefined") return;
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(word);
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+
+  const preferredVoice =
+    voices.find((voice) =>
+      voice.name.toLowerCase().includes("samantha")
+    ) ||
+    voices.find((voice) =>
+      voice.name.toLowerCase().includes("google us english")
+    ) ||
+    voices.find((voice) =>
+      voice.lang.startsWith("en")
+    );
+
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}
+
 export function WordCard({
   word,
   showDelete = false,
@@ -146,9 +177,34 @@ export function WordCard({
         <CardHeader className="gap-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <CardTitle className="break-words text-xl">
-                {word.term}
-              </CardTitle>
+              <div className="flex items-start gap-2">
+                <CardTitle className="break-words text-xl">
+                  {word.term}
+                </CardTitle>
+
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="
+                    h-8
+                    w-8
+                    shrink-0
+                    rounded-full
+                    text-muted-foreground
+                    transition-all
+                    duration-200
+
+                    hover:bg-primary/10
+                    hover:text-primary
+                  "
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    speakWord(word.term);
+                  }}
+                >
+                  <Volume2 className="h-4 w-4" />
+                </Button>
+              </div>
 
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
                 {word.meaning}

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+
 import "./globals.css";
+
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { AuthProvider } from "@/components/auth-provider";
@@ -21,16 +23,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
-        <ThemeProvider>
-        <AuthProvider>
-          <div className="fixed right-4 top-4 z-50">
-            <ThemeToggle />
-          </div>
-          {children}
-        </AuthProvider>
-      </ThemeProvider>
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className="h-full"
+    >
+      <body
+        className={`
+          ${inter.variable}
+          min-h-full
+          bg-background
+          font-sans
+          antialiased
+        `}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            <div className="fixed right-4 top-4 z-50">
+              <ThemeToggle />
+            </div>
+
+            {children}
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

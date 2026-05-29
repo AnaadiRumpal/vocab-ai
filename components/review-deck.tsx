@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Volume2 } from "lucide-react";
 
 type ReviewRating = "FORGOT" | "HARD" | "GOOD" | "EASY";
+
 
 export type ReviewDeckCard = {
   id: string;
@@ -21,6 +22,29 @@ export type ReviewDeckCard = {
   isRetry?: boolean;
 };
 
+function speakWord(word: string) {
+  if (typeof window === "undefined") return;
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(word);
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+
+  const preferredVoice =
+    voices.find((v) => v.name.toLowerCase().includes("google")) ||
+    voices.find((v) => v.lang.startsWith("en"));
+
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}
 
 export function ReviewDeck({
   words,
@@ -286,9 +310,34 @@ export function ReviewDeck({
             ) : null}
           </div>
 
+          <div className="flex items-center justify-center gap-3">
           <CardTitle className="text-4xl tracking-tight">
             {current.term}
           </CardTitle>
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="
+              h-10
+              w-10
+              rounded-full
+              text-muted-foreground
+              transition-all
+              duration-200
+
+              hover:bg-primary/10
+              hover:text-primary
+              hover:scale-110
+            "
+            onClick={(e) => {
+              e.stopPropagation();
+              speakWord(current.term);
+            }}
+          >
+            <Volume2 className="h-5 w-5" />
+          </Button>
+        </div>
         </CardHeader>
 
           <CardContent className="flex flex-col items-center gap-5  text-center">
