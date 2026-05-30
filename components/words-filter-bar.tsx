@@ -8,6 +8,7 @@ import {
   SlidersHorizontal,
   RotateCcw,
   Loader2,
+  Download,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -240,8 +241,9 @@ export function WordsFilterBar({
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2">
-        <SearchButton/>
+      <div className="mt-4 flex items-center justify-between gap-2">
+        <div className=" flex items-center gap-2">
+          <SearchButton/>
 
         <LoadingLinkButton
           href="/words"
@@ -256,6 +258,15 @@ export function WordsFilterBar({
             Reset
           </>
         </LoadingLinkButton>
+        </div>
+
+        <Button asChild variant="ghost" className="h-11 rounded-xl
+            px-4 text-muted-foreground cursor-pointer">
+          <a href="/api/export">
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </a>
+        </Button>
       </div>
     </form>
   );
