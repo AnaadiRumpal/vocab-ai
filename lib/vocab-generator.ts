@@ -9,7 +9,6 @@ const GEMINI_KEYS = [
 const GEMINI_MODELS = [
   process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
   "gemini-2.0-flash",
-  "gemini-1.5-flash",
 ];
 
 const cooldowns = new Map<string, number>();
@@ -26,6 +25,20 @@ function isRetryableError(error: unknown) {
     text.includes("overloaded")
   );
 }
+
+const suggestedWordSchema = z.object({
+  term: z.string(),
+  relatedTo: z.string(),
+  reason: z.string(),
+});
+
+const relatedWordsSchema = z.object({
+  words: z.array(suggestedWordSchema).length(10),
+});
+
+export type SuggestedWord = z.infer<
+  typeof suggestedWordSchema
+>;
 
 async function generateWithFallback(
   payload: Omit<
@@ -68,7 +81,10 @@ async function generateWithFallback(
       } catch (error) {
         lastError = error;
 
-        console.warn(`Gemini failed for model=${model}`);
+          console.error(
+            `Gemini failed for model=${model}`,
+            JSON.stringify(error, null, 2)
+          );
 
         if (!isRetryableError(error)) {
           throw error;
@@ -184,6 +200,95 @@ const responseSchema = {
     "difficulty",
   ],
 };
+
+const relatedWordsResponseSchema = {
+  type: Type.OBJECT,
+  properties: {
+    words: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          term: {
+            type: Type.STRING,
+          },
+          relatedTo: {
+            type: Type.STRING,
+          },
+          reason: {
+            type: Type.STRING,
+          },
+        },
+        required: [
+          "term",
+          "relatedTo",
+          "reason",
+        ],
+      },
+    },
+  },
+  required: ["words"],
+};
+
+export async function generateRelatedWords(
+  recentWords: {
+    term: string;
+    meaning: string;
+  }[]
+): Promise<SuggestedWord[]> {
+  const prompt = [
+    "Recent vocabulary:",
+    ...recentWords.map(
+      (w) => `${w.term} — ${w.meaning}`
+    ),
+    "",
+    "Suggest 5 useful new vocabulary items.",
+    "",
+    "Rules:",
+    "- Do not repeat existing words.",
+    "- Use exactly one existing word in relatedTo.",
+    "- Prefer common educated English over obscure words.",
+    "- Mix synonyms, antonyms, related concepts, collocations, and idioms.",
+    "- Expand the learner's vocabulary network.",
+    "- reason must describe the relationship only.",
+    "- reason must be 5 words or fewer.",
+  ].join("\n");
+
+  const response = await generateWithFallback({
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: relatedWordsResponseSchema,
+      temperature: 0.8,
+    },
+  });
+
+  const text = response.text;
+
+  if (!text) {
+    throw new Error(
+      "Gemini did not return related words."
+    );
+  }
+
+  const json = JSON.parse(text);
+
+  const parsed =
+    relatedWordsSchema.parse(json);
+
+  const existing = new Set(
+    recentWords.map((w) =>
+      w.term.toLowerCase()
+    )
+  );
+
+  return parsed.words.filter(
+    (word) =>
+      !existing.has(
+        word.term.trim().toLowerCase()
+      )
+  );
+}
 
 export async function generateVocabEntry(input: {
   term: string;

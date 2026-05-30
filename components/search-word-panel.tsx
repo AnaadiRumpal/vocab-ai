@@ -27,31 +27,48 @@ export function SearchWordPanel() {
   const [error, setError] = useState<string | null>(null);
 
   async function lookup() {
-    setStatus("looking");
-    setError(null);
-    setEntry(null);
+    try {
+      setStatus("looking");
+      setError(null);
+      setEntry(null);
 
-    const response = await fetch("/api/lookup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        term,
-        sourceText,
-      }),
-    });
+      const response = await fetch("/api/lookup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          term,
+          sourceText,
+        }),
+      });
 
-    const data = await response.json();
+      let data: any = null;
 
-    if (!response.ok) {
-      setError(data.error ?? "Could not look up this term.");
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        setError(
+          data?.error ??
+            "Unable to generate this vocabulary card right now. Please try again later."
+        );
+        return;
+      }
+
+      setEntry(data.entry);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        "Network error. Please check your connection and try again."
+      );
+    } finally {
       setStatus("idle");
-      return;
     }
-
-    setEntry(data.entry);
-    setStatus("idle");
   }
 
   async function addToWords() {
@@ -59,31 +76,50 @@ export function SearchWordPanel() {
       return;
     }
 
-    setStatus("adding");
-    setError(null);
+    try {
+      setStatus("adding");
+      setError(null);
 
-    const response = await fetch("/api/words", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ entry }),
-    });
+      const response = await fetch("/api/words", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ entry }),
+      });
 
-    const data = await response.json();
+      let data: any = null;
 
-    if (!response.ok) {
-      setError(data.error ?? "Could not add this term.");
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+
+      if (!response.ok) {
+        setError(
+          data?.error ??
+            "Could not add this word. Please try again."
+        );
+        setStatus("idle");
+        return;
+      }
+
+      setStatus("added");
+
+      setTimeout(() => {
+        setEntry(null);
+        setStatus("idle");
+      }, 900);
+    } catch (error) {
+      console.error(error);
+
+      setError(
+        "Network error. Please check your connection and try again."
+      );
+
       setStatus("idle");
-      return;
     }
-
-    setStatus("added");
-
-    setTimeout(() => {
-      setEntry(null);
-      setStatus("idle");
-    }, 900);
   }
 
   return (

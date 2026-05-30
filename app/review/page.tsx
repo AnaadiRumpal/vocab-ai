@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { ReviewDeck, type ReviewDeckCard } from "@/components/review-deck";
 import { db } from "@/lib/db";
@@ -9,6 +8,7 @@ import { auth } from "@/auth";
 import { ReviewInfoDialog } from "@/components/review-info-dialog";
 import { LoadingLinkButton } from "@/components/loading-link-button";
 import { WordStatus } from "@/app/generated/prisma/client";
+import { RelatedWordsButton } from "@/components/related-words-button";
 
 function toStringArray(value: unknown) {
   return Array.isArray(value) ? value.map(String) : [];
@@ -114,6 +114,10 @@ export default async function ReviewPage() {
             <p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
               No reviews waiting right now. Come back later to keep your memory sharp.
             </p>
+            <div className="mt-4 flex justify-center">
+              <RelatedWordsButton />
+            </div>   
+
           </CardContent>
         </Card>
         ) : (

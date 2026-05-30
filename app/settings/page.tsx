@@ -1,11 +1,9 @@
 // app/settings/page.tsx
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Download, Smartphone } from "lucide-react";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import { CopyTokenButton } from "@/components/copy-token-button";
 import { LoadingLinkButton } from "@/components/loading-link-button";
 import { LoadingNavButton } from "@/components/loading-nav-button";

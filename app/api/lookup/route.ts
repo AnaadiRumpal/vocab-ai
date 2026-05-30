@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
   const sourceText =
     typeof body?.sourceText === "string" ? body.sourceText.trim() : null;
 
+try {
   const entry = await generateVocabEntry({
     term,
     normalized: normalizeTerm(term),
@@ -55,7 +56,29 @@ export async function POST(request: NextRequest) {
   });
 
   return NextResponse.json({
-    ok: true,
-    entry,
-  });
+      ok: true,
+      entry,
+    });
+  } catch (error) {
+    console.error("Lookup failed:", error);
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "";
+
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          message.includes("429") ||
+          message.includes("RESOURCE_EXHAUSTED")
+            ? "AI quota exceeded. Please try again shortly."
+            : "Could not generate vocabulary card.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }

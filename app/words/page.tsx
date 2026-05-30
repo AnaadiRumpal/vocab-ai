@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { WordCard } from "@/components/word-card";
 import { LoadingLinkButton } from "@/components/loading-link-button";
+import { RelatedWordsButton } from "@/components/related-words-button";
 
 const PAGE_SIZE = 10;
 
@@ -238,6 +239,7 @@ export default async function WordsPage({
           card{totalWords === 1 ? "" : "s"}
         </div>
 
+
         {words.length === 0 ? (
           <Card>
             <CardContent
@@ -316,6 +318,8 @@ export default async function WordsPage({
             <div />
           )}
         </div>
+        <RelatedWordsButton />
+
       </div>
     </main>
   );
