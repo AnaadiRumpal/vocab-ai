@@ -304,7 +304,7 @@ export function WordCard({
                   ...(word.dueAt
                     ? [
                         {
-                          label: `Due: ${formatDateTime(word.dueAt)}`,
+                          label: `Due: ${formatDate(word.dueAt)}`,
                           variant: "outline" as const,
                         },
                       ]
