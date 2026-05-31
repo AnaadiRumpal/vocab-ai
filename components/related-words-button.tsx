@@ -22,7 +22,6 @@ export function RelatedWordsButton() {
         className="
             h-12
             m-2
-            w-full
             cursor-pointer
             gap-2
             rounded-xl

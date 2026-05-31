@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Volume2 } from "lucide-react";
-import { getDifficultyBadge } from "./utils/utils";
+import { getDifficultyBadge, speakWord } from "./utils/utils";
 
 type ReviewRating = "FORGOT" | "HARD" | "GOOD" | "EASY";
 
@@ -21,32 +21,6 @@ export type ReviewDeckCard = {
   difficulty: number | null;
   isRetry?: boolean;
 };
-
-
-
-function speakWord(word: string) {
-  if (typeof window === "undefined") return;
-
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(word);
-
-  utterance.lang = "en-US";
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-
-  const voices = window.speechSynthesis.getVoices();
-
-  const preferredVoice =
-    voices.find((v) => v.name.toLowerCase().includes("google")) ||
-    voices.find((v) => v.lang.startsWith("en"));
-
-  if (preferredVoice) {
-    utterance.voice = preferredVoice;
-  }
-
-  window.speechSynthesis.speak(utterance);
-}
 
 export function ReviewDeck({
   words,

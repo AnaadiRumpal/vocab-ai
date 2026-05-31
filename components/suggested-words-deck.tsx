@@ -18,12 +18,13 @@ import {
 import {
   Check,
   Loader2,
+  Volume2,
 } from "lucide-react";
 
 import type {
   VocabEntry,
 } from "@/lib/vocab-generator";
-import { getDifficultyBadge } from "./utils/utils";
+import { getDifficultyBadge, speakWord } from "./utils/utils";
 import { useRouter } from "next/navigation";
 
 type QueueWord = {
@@ -38,7 +39,7 @@ const [queue, setQueue] = useState<QueueWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
-
+  const [error, setError] = useState<string | null>(null);
 
   const [initialCount, setInitialCount] = useState(0);
   const [completed, setCompleted] = useState(0);
@@ -100,50 +101,46 @@ useEffect(() => {
 
 
 function nextCard() {
+  if (isExiting) return;
+
   setIsExiting(true);
 
   const rest = queue.slice(1);
 
   setTimeout(() => {
     setQueue(rest);
-    setIsExiting(false); // reset AFTER animation
-  }, 250); // match your CSS duration
+    setCompleted((v) => v + 1);
+    setIsExiting(false);
 
-  sessionStorage.setItem(
-    "suggestedWords",
-    JSON.stringify(rest)
-  );
-
-  setCompleted((value) => value + 1);
+    sessionStorage.setItem("suggestedWords", JSON.stringify(rest));
+  }, 250);
 }
 
- async function addWord() {
+async function addWord() {
   if (!current) return;
 
   try {
     setSaving(true);
+    setError(null);
 
-    const response =
-      await fetch(
-        "/api/words",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            entry:
-              current.entry,
-          }),
-        }
-      );
+    const response = await fetch("/api/words", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        entry: current.entry,
+      }),
+    });
 
     if (!response.ok) {
+      setError("Failed to add word. Please try again.");
       return;
     }
 
     nextCard();
+  } catch {
+    setError("Something went wrong while adding the word.");
   } finally {
     setSaving(false);
   }
@@ -325,9 +322,35 @@ function nextCard() {
             : "translate-x-0 rotate-0 scale-100 opacity-100 blur-0",
         ].join(" ")}>
         <CardHeader>
+          <div className="flex items-center justify-center gap-3">
+
           <CardTitle className="text-3xl">
             {current?.entry.term}
           </CardTitle>
+
+          <Button
+            size="icon"
+            variant="ghost"
+            className="
+              h-8
+              w-8
+              shrink-0
+              rounded-full
+              text-muted-foreground
+              transition-all
+              duration-200
+
+              hover:bg-primary/10
+              hover:text-primary
+            "
+            onClick={(event) => {
+              event.stopPropagation();
+              speakWord(current?.entry.term);
+            }}
+          >
+            <Volume2 className="h-4 w-4" />
+          </Button>
+          </div>
 
           <div className="flex gap-2">
             <Badge variant="secondary">
@@ -434,7 +457,11 @@ function nextCard() {
           ) : null}
         </CardContent>
       </Card>
-
+      {error ? (
+        <div className="text-sm text-destructive text-center">
+          {error}
+        </div>
+      ) : null}
       <div className="grid grid-cols-2 gap-3">
         <Button
           variant="outline"

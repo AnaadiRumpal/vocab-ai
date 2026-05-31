@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DeleteWordButton } from "@/components/delete-word-button";
 import { WordMetaBadges } from "@/components/word-meta-badges";
-import { getDifficultyBadge } from "./utils/utils";
+import { getDifficultyBadge, speakWord } from "./utils/utils";
 
 
 type WordCardProps = {
@@ -60,36 +60,6 @@ function formatDateTime(date: Date | string) {
   }).format(new Date(date));
 }
 
-function speakWord(word: string) {
-  if (typeof window === "undefined") return;
-
-  window.speechSynthesis.cancel();
-
-  const utterance = new SpeechSynthesisUtterance(word);
-
-  utterance.lang = "en-US";
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-
-  const voices = window.speechSynthesis.getVoices();
-
-  const preferredVoice =
-    voices.find((voice) =>
-      voice.name.toLowerCase().includes("samantha")
-    ) ||
-    voices.find((voice) =>
-      voice.name.toLowerCase().includes("google us english")
-    ) ||
-    voices.find((voice) =>
-      voice.lang.startsWith("en")
-    );
-
-  if (preferredVoice) {
-    utterance.voice = preferredVoice;
-  }
-
-  window.speechSynthesis.speak(utterance);
-}
 
 export function WordCard({
   word,

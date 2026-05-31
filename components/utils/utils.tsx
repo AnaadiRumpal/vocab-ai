@@ -39,3 +39,35 @@ export function getDifficultyBadge(difficulty: number | null) {
     className: "border-muted bg-muted/40 text-muted-foreground",
   };
 }
+
+export 
+function speakWord(word: string) {
+  if (typeof window === "undefined") return;
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(word);
+
+  utterance.lang = "en-US";
+  utterance.rate = 0.9;
+  utterance.pitch = 1;
+
+  const voices = window.speechSynthesis.getVoices();
+
+  const preferredVoice =
+    voices.find((voice) =>
+      voice.name.toLowerCase().includes("samantha")
+    ) ||
+    voices.find((voice) =>
+      voice.name.toLowerCase().includes("google us english")
+    ) ||
+    voices.find((voice) =>
+      voice.lang.startsWith("en")
+    );
+
+  if (preferredVoice) {
+    utterance.voice = preferredVoice;
+  }
+
+  window.speechSynthesis.speak(utterance);
+}

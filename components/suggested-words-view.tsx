@@ -22,6 +22,7 @@ export function SuggestedWordsView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [words, setWords] = useState<SuggestedWord[]>([]);
+  const [navigating, setNavigating] = useState(false);
 
   const seedRef = useRef<number>(Date.now());
   const initialized = useRef(false);
@@ -87,8 +88,12 @@ export function SuggestedWordsView() {
   }
 
   function beginLearning() {
+    setNavigating(true);
+
     sessionStorage.setItem("suggestedWords", JSON.stringify(words));
-    router.push("/suggested-words/learn");
+    setTimeout(() => {
+        window.location.href = "/suggested-words/learn";
+    }, 50);
   }
 
 
@@ -226,35 +231,36 @@ export function SuggestedWordsView() {
     )}
 
     <div className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
-      <Button
-        disabled={words.length === 0}
-        className="
-          h-12
-          m-2
-          w-full
-          cursor-pointer
-          gap-2
-          rounded-xl
-          border
-          border-primary/20
-          bg-gradient-to-b
-          from-primary
-          to-primary/90
-          text-primary-foreground
-          shadow-[0_8px_24px_rgba(0,0,0,0.12)]
-          transition-all
-          duration-200
-          hover:-translate-y-0.5
-          hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)]
-          active:translate-y-0
-          active:shadow-[0_4px_12px_rgba(0,0,0,0.12)]
-        "
-        onClick={beginLearning}
-      >
-        Begin Learning
-        <ArrowRight className="h-4 w-4" />
-      </Button>
-    </div>
+        <Button
+            disabled={words.length === 0 || navigating}
+            className="
+            h-12
+            my-2
+            w-full
+            cursor-pointer
+            gap-2
+            rounded-xl
+            border
+            border-primary/20
+            bg-gradient-to-b
+            from-primary
+            to-primary/90
+            text-primary-foreground
+            shadow-[0_8px_24px_rgba(0,0,0,0.12)]
+            transition-all
+            duration-200
+            hover:-translate-y-0.5
+            hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)]
+            active:translate-y-0
+            active:shadow-[0_4px_12px_rgba(0,0,0,0.12)]
+            "
+            onClick={beginLearning}
+        >
+            {navigating ? "Generating cards for words..." : "Begin Learning"}
+
+            {!navigating && <ArrowRight className="h-4 w-4" />}
+        </Button>
+        </div>
     </div>
   );
 }
