@@ -16,29 +16,56 @@ export function ThemeToggle() {
   }, []);
 
   return (
-    <Button
-      type="button"
-      variant="ghost"
-      size="icon"
-      aria-label="Toggle theme"
-      title="Toggle theme"
-      disabled={!mounted}
-      onClick={() =>
-        setTheme(
-          resolvedTheme === "dark"
-            ? "light"
-            : "dark"
-        )
-      }
-      className="h-9 w-9"
-    >
-      {!mounted ? (
-        <span className="h-4 w-4" />
-      ) : resolvedTheme === "dark" ? (
-        <Sun className="h-4 w-4" />
-      ) : (
-        <Moon className="h-4 w-4" />
-      )}
-    </Button>
+    <div className="relative">
+      <div
+        className="
+          pointer-events-none
+          absolute
+          left-1/2
+          top-1/2
+          h-14
+          w-14
+          -translate-x-1/2
+          -translate-y-1/2
+          rounded-full
+          bg-primary/20
+          blur-xl
+        "
+      />
+
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        aria-label="Toggle theme"
+        title="Toggle theme"
+        disabled={!mounted}
+        onClick={() =>
+          setTheme(
+            resolvedTheme === "dark"
+              ? "light"
+              : "dark"
+          )
+        }
+        className="
+          relative
+          h-9
+          w-9
+          rounded-full
+          bg-background/50
+          backdrop-blur-sm
+          border
+          shadow-sm
+        "
+      >
+        {!mounted ? (
+          <span className="h-4 w-4" />
+        ) : resolvedTheme === "dark" ? (
+          <Sun className="h-4 w-4" />
+        ) : (
+          <Moon className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
   );
 }

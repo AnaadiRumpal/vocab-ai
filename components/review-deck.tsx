@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Volume2 } from "lucide-react";
 import { getDifficultyBadge, speakWord } from "./utils/utils";
+import { RelatedWordsButton } from "./related-words-button";
 
 type ReviewRating = "FORGOT" | "HARD" | "GOOD" | "EASY";
 
@@ -137,7 +138,7 @@ export function ReviewDeck({
             You reviewed {completedCount} word
             {completedCount === 1 ? "" : "s"} this round.
           </p>
-
+          
           {remainingOutsideSession > 0 ? (
             <>
               <div
@@ -177,6 +178,7 @@ export function ReviewDeck({
               You’re fully caught up for today 🎉
             </div>
           )}
+          <RelatedWordsButton />
         </CardContent>
       </Card>
     );
