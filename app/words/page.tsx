@@ -295,11 +295,13 @@ export default async function WordsPage({
           "
         >
           {page > 1 ? (
-            <Button asChild variant="outline">
-              <Link href={pageHref(page - 1)}>
-                Previous
-              </Link>
-            </Button>
+            <LoadingLinkButton
+              href={pageHref(page - 1)}
+              variant="outline"
+              className="cursor-pointer"
+            >
+              Previous
+            </LoadingLinkButton>
           ) : (
             <div />
           )}
@@ -309,11 +311,13 @@ export default async function WordsPage({
           </p>
 
           {page < totalPages ? (
-            <Button asChild variant="outline">
-              <Link href={pageHref(page + 1)}>
-                Next
-              </Link>
-            </Button>
+            <LoadingLinkButton
+              href={pageHref(page + 1)}
+              variant="outline"
+              className="cursor-pointer"
+            >
+              Next
+            </LoadingLinkButton>
           ) : (
             <div />
           )}
