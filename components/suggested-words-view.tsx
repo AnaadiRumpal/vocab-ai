@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight,  Info,  RefreshCw,  X } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 import { useRouter } from "next/navigation";
+import { Popover, PopoverContent, PopoverTrigger } from "@radix-ui/react-popover";
 
 type SuggestedWord = {
   relatedTo: string;
@@ -27,6 +28,8 @@ export function SuggestedWordsView() {
   const seedRef = useRef<number>(Date.now());
   const initialized = useRef(false);
 
+  const isMobile = useMediaQuery("(max-width: 768px)");
+  
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
       if (event.persisted) {
@@ -205,19 +208,29 @@ export function SuggestedWordsView() {
                 <div className="px-2 py-1 rounded-full flex text-muted-foreground bg-muted items-center gap-2">
                   <span className="text-xs">{word.relatedTo}</span>
 
+                 {isMobile ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button>
+                        <Info className="h-3.5 w-3.5" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-fit border rounded-full bg-foreground text-background p-2 px-4 text-sm shadow-md">
+                      {word.reason}
+                    </PopoverContent>
+                  </Popover>
+                ) : (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button className="cursor-pointer text-muted-foreground hover:text-foreground">
+                        <button>
                           <Info className="h-3.5 w-3.5" />
                         </button>
                       </TooltipTrigger>
-
-                      <TooltipContent>
-                        <p>{word.reason}</p>
-                      </TooltipContent>
+                      <TooltipContent>{word.reason}</TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
+                )}
                 </div>
               </div>
             </div>
@@ -263,4 +276,23 @@ export function SuggestedWordsView() {
         </div>
     </div>
   );
+}
+
+export function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+
+  useEffect(() => {
+    const mql = window.matchMedia(query);
+
+    const onChange = () => {
+      setMatches(mql.matches);
+    };
+
+    onChange();
+    mql.addEventListener("change", onChange);
+
+    return () => mql.removeEventListener("change", onChange);
+  }, [query]);
+
+  return matches;
 }
