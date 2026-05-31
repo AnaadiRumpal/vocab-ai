@@ -1,86 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, ArrowRight,  Info,  X } from "lucide-react";
+import { ArrowLeft, ArrowRight,  Info,  RefreshCw,  X } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { useRouter } from "next/navigation";
 
 type SuggestedWord = {
-  term: string;
   relatedTo: string;
   reason: string;
+
+  entry: {
+    term: string;
+  };
 };
 
 export function SuggestedWordsView() {
+  const router = useRouter();
+
   const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-  const [words, setWords] = useState<
-    SuggestedWord[]
-  >([]);
+  const [error, setError] = useState<string | null>(null);
+  const [words, setWords] = useState<SuggestedWord[]>([]);
+
+  const seedRef = useRef<number>(Date.now());
+  const initialized = useRef(false);
 
   useEffect(() => {
-    async function load() {
-        try {
-        setError(null);
-
-        const response = await fetch(
-            "/api/related-words",
-            {
-            method: "POST",
-            }
-        );
-
-        const data = await response.json();
-
-        if (!response.ok) {
-            setError(
-            data.error ??
-            "Could not generate suggestions right now."
-            );
-            return;
-        }
-
-        setWords(data.words ?? []);
-        } catch {
-        setError(
-            "Could not generate suggestions right now."
-        );
-        } finally {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
         setLoading(false);
-        }
+      }
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => window.removeEventListener("pageshow", handlePageShow);
+  }, []);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    const cached = sessionStorage.getItem("suggestedWords");
+
+    if (cached) {
+      setWords(JSON.parse(cached));
+      setLoading(false);
+      return;
     }
 
-    load();
-    }, []);
+    loadSuggestions();
+  }, []);
 
-  function removeWord(term: string) {
-    setWords((current) =>
-      current.filter(
-        (word) => word.term !== term
-      )
-    );
+  async function loadSuggestions() {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch("/api/related-words", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          seed: seedRef.current,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error ?? "Could not generate suggestions.");
+        return;
+      }
+
+      setWords(data.words ?? []);
+    } catch {
+      setError("Could not generate suggestions.");
+    } finally {
+      setLoading(false);
+    }
   }
 
-    if (loading) {
-    return (
+  function removeWord(term: string) {
+    setWords((curr) => curr.filter((w) => w.entry.term !== term));
+  }
 
-            <div className="space-y-2 mt-4">
-                {Array.from({ length: 3 }).map((_, i) => (
-                <div
-                    key={i}
-                    className="rounded-lg border p-3"
-                >
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="mt-2 h-3 w-40" />
-                    <Skeleton className="mt-2 h-3 w-32" />
-                </div>
-                ))}
+  function beginLearning() {
+    sessionStorage.setItem("suggestedWords", JSON.stringify(words));
+    router.push("/suggested-words/learn");
+  }
 
-            <Skeleton className="h-10 w-full" />
-            </div>
-        );
-    }
 
     if (error) {
         return (
@@ -104,7 +114,7 @@ export function SuggestedWordsView() {
 
                 <Button
                 className="mt-4"
-                onClick={() => window.location.reload()}
+                onClick={loadSuggestions}
                 >
                 Try Again
                 </Button>
@@ -126,121 +136,125 @@ export function SuggestedWordsView() {
             </p>
         </div>
 
-        <p className="text-sm mt-4 text-muted-foreground">
-        Remove any words you already know or don't want to learn.
+        <Button
+      variant="outline"
+      size="sm"
+      onClick={loadSuggestions}
+      disabled={loading}
+      className="gap-2 cursor-pointer"
+    >
+      <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+      Generate new words
+    </Button>
+
+    {loading ? (
+      <div className="space-y-2 mt-4">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="rounded-lg border p-3">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="mt-2 h-3 w-40" />
+            <Skeleton className="mt-2 h-3 w-32" />
+          </div>
+        ))}
+
+        <Skeleton className="h-10 w-full" />
+      </div>
+    ) : words.length > 0 ? (
+      <div className="flex flex-col gap-4 p-4 rounded-lg border bg-muted/30">
+        <p className="text-sm text-muted-foreground">
+          Remove any words you already know or don't want to learn.
         </p>
 
-      <div className="flex flex-wrap gap-2">
-        {words.map((word) => (
-          <div
-            key={word.term}
-            className="
+        <div className="flex flex-wrap gap-2">
+          {words.map((word) => (
+            <div
+              key={word.entry.term}
+              className="
                 rounded-full
                 border
+                border-primary/30
                 px-4
                 py-3
+                bg-background
                 transition-all
-                hover:border-primary/30
-                hover:bg-accent/40
-            "
+                hover:border-primary/80
+                hover:bg-accent/80
+              "
             >
-            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3">
                 <button
-                onClick={() => removeWord(word.term)}
-                className="
-                    flex
-                    h-6
-                    w-6
-                    items-center
-                    justify-center
-                    rounded-full
-                    border
-                    cursor-pointer
+                  onClick={() => removeWord(word.entry.term)}
+                  className="
+                    flex h-6 w-6 items-center justify-center
+                    rounded-full border cursor-pointer
                     transition-colors
-                    hover:bg-destructive/10
-                "
+                    hover:bg-foreground/80
+                    hover:text-background
+                  "
                 >
-                <X className="h-3 w-3" />
+                  <X className="h-3 w-3" />
                 </button>
 
-                <div className="font-medium">
-                    {word.term}
-                </div>
+                <div className="font-medium">{word.entry.term}</div>
 
-                <div className=" px-2 py-1 items-center rounded-full
-                    flex text-muted-foreground bg-muted items-center gap-2">
-                    <span
-                    className="        
-                        text-xs  
-                    "
-                    >
-                    {word.relatedTo}
-                    </span>
+                <div className="px-2 py-1 rounded-full flex text-muted-foreground bg-muted items-center gap-2">
+                  <span className="text-xs">{word.relatedTo}</span>
 
-                    <TooltipProvider>
+                  <TooltipProvider>
                     <Tooltip>
-                        <TooltipTrigger asChild>
-                        <button
-                            className="
-                            cursor-pointer
-                            text-muted-foreground
-                            hover:text-foreground
-                            "
-                        >
-                            <Info className="h-3.5 w-3.5" />
+                      <TooltipTrigger asChild>
+                        <button className="cursor-pointer text-muted-foreground hover:text-foreground">
+                          <Info className="h-3.5 w-3.5" />
                         </button>
-                        </TooltipTrigger>
+                      </TooltipTrigger>
 
-                        <TooltipContent>
+                      <TooltipContent>
                         <p>{word.reason}</p>
-                        </TooltipContent>
+                      </TooltipContent>
                     </Tooltip>
-                    </TooltipProvider>
+                  </TooltipProvider>
                 </div>
-                
+              </div>
             </div>
-            </div>
-        ))}
-      </div>
-
-      <div className="sticky bottom-0  bg-background/95 pt-3 backdrop-blur">
-        <Button
-            disabled={words.length === 0}
-            className="
-            h-12
-            m-2
-            w-full
-            cursor-pointer
-            gap-2
-            rounded-xl
-            border
-            border-primary/20
-            bg-gradient-to-b
-            from-primary
-            to-primary/90
-            text-primary-foreground
-            shadow-[0_8px_24px_rgba(0,0,0,0.12)]
-            transition-all
-            duration-200
-            hover:-translate-y-0.5
-            hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)]
-            active:translate-y-0
-            active:shadow-[0_4px_12px_rgba(0,0,0,0.12)]
-            "
-            onClick={() => {
-                sessionStorage.setItem(
-                "suggestedWords",
-                JSON.stringify(words)
-                );
-
-                window.location.href =
-                "/suggested-words/learn";
-            }}
-        >
-            Begin Learning
-            <ArrowRight className="h-4 w-4" />
-        </Button>
+          ))}
         </div>
+      </div>
+    ) : (
+      <div className="flex flex-col gap-4 p-4 rounded-lg border bg-muted/30">
+        No suggestions found.
+      </div>
+    )}
+
+    <div className="sticky bottom-0 bg-background/95 pt-3 backdrop-blur">
+      <Button
+        disabled={words.length === 0}
+        className="
+          h-12
+          m-2
+          w-full
+          cursor-pointer
+          gap-2
+          rounded-xl
+          border
+          border-primary/20
+          bg-gradient-to-b
+          from-primary
+          to-primary/90
+          text-primary-foreground
+          shadow-[0_8px_24px_rgba(0,0,0,0.12)]
+          transition-all
+          duration-200
+          hover:-translate-y-0.5
+          hover:shadow-[0_12px_32px_rgba(0,0,0,0.18)]
+          active:translate-y-0
+          active:shadow-[0_4px_12px_rgba(0,0,0,0.12)]
+        "
+        onClick={beginLearning}
+      >
+        Begin Learning
+        <ArrowRight className="h-4 w-4" />
+      </Button>
+    </div>
     </div>
   );
 }

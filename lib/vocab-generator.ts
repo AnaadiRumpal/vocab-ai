@@ -6,6 +6,10 @@ const GEMINI_KEYS = [
   process.env.GEMINI_API_KEY2,
 ].filter(Boolean) as string[];
 
+const USE_MOCK =
+  process.env.NODE_ENV === "development" &&
+  process.env.MOCK_GEMINI === "true";
+
 const GEMINI_MODELS = [
   process.env.GEMINI_MODEL ?? "gemini-2.5-flash",
   "gemini-2.0-flash",
@@ -26,19 +30,99 @@ function isRetryableError(error: unknown) {
   );
 }
 
-const suggestedWordSchema = z.object({
+function createMockVocabEntry(term: string): VocabEntry {
+  return {
+    term,
+    normalized: term.toLowerCase().trim(),
+    kind: "WORD",
+    partOfSpeech: "noun",
+    meaning: `${term} (mock meaning for UI testing)`,
+    plainEnglish: `Simple explanation of ${term}.`,
+    examples: [
+      `This is an example sentence using ${term}.`,
+      `${term} appears in everyday language.`,
+    ],
+    synonyms: ["example", "sample", "instance"],
+    mnemonic: `Think of ${term} as something memorable.`,
+    etymology: null,
+    difficulty: Math.floor(Math.random() * 5) + 1,
+  };
+}
+
+
+function generateMockRelatedWords(): SuggestedWordCard[] {
+  const base = [
+    "meticulous",
+    "candid",
+    "eloquent",
+    "resilient",
+    "pragmatic",
+  ];
+
+  const relations = [
+    "synonym of",
+    "related to",
+    "opposite of",
+    "example of",
+    "concept near",
+  ];
+
+  return base.map((term, i) => ({
+    relatedTo: term,
+    reason: "mock relation",
+
+    entry: createMockVocabEntry(
+      term + "_mock_" + i
+    ),
+  }));
+}
+
+export const vocabEntrySchema = z.object({
   term: z.string(),
+  normalized: z.string(),
+  kind: z.enum([
+    "WORD",
+    "PHRASE",
+    "IDIOM",
+    "PHRASAL_VERB",
+    "TECHNICAL_TERM",
+    "OTHER",
+  ]),
+  partOfSpeech: z.string().nullable(),
+  meaning: z.string(),
+  plainEnglish: z.string(),
+  examples: z.array(z.string()),
+  synonyms: z.array(z.string()),
+  mnemonic: z.string().nullable(),
+  etymology: z.string().nullable(),
+  difficulty: z.number().int().min(1).max(5),
+});
+
+export type VocabEntry = z.infer<typeof vocabEntrySchema>;
+
+const suggestedWordCardSchema = z.object({
   relatedTo: z.string(),
   reason: z.string(),
+  entry: vocabEntrySchema,
 });
 
 const relatedWordsSchema = z.object({
-  words: z.array(suggestedWordSchema).length(10),
+  words: z.array(
+    suggestedWordCardSchema
+  ).length(5),
 });
 
 export type SuggestedWord = z.infer<
-  typeof suggestedWordSchema
+  typeof suggestedWordCardSchema
 >;
+
+export type SuggestedWordCard = {
+  relatedTo: string;
+  reason: string;
+  entry: VocabEntry;
+};
+
+
 
 async function generateWithFallback(
   payload: Omit<
@@ -101,28 +185,7 @@ async function generateWithFallback(
   throw lastError;
 }
 
-export const vocabEntrySchema = z.object({
-  term: z.string(),
-  normalized: z.string(),
-  kind: z.enum([
-    "WORD",
-    "PHRASE",
-    "IDIOM",
-    "PHRASAL_VERB",
-    "TECHNICAL_TERM",
-    "OTHER",
-  ]),
-  partOfSpeech: z.string().nullable(),
-  meaning: z.string(),
-  plainEnglish: z.string(),
-  examples: z.array(z.string()),
-  synonyms: z.array(z.string()),
-  mnemonic: z.string().nullable(),
-  etymology: z.string().nullable(),
-  difficulty: z.number().int().min(1).max(5),
-});
 
-export type VocabEntry = z.infer<typeof vocabEntrySchema>;
 
 const responseSchema = {
   type: Type.OBJECT,
@@ -209,20 +272,21 @@ const relatedWordsResponseSchema = {
       items: {
         type: Type.OBJECT,
         properties: {
-          term: {
-            type: Type.STRING,
-          },
           relatedTo: {
             type: Type.STRING,
           },
+
           reason: {
             type: Type.STRING,
           },
+
+          entry: responseSchema,
         },
+
         required: [
-          "term",
           "relatedTo",
           "reason",
+          "entry",
         ],
       },
     },
@@ -235,31 +299,65 @@ export async function generateRelatedWords(
     term: string;
     meaning: string;
   }[]
-): Promise<SuggestedWord[]> {
-  const prompt = [
-    "Recent vocabulary:",
-    ...recentWords.map(
-      (w) => `${w.term} — ${w.meaning}`
-    ),
-    "",
-    "Suggest 5 useful new vocabulary items.",
-    "",
-    "Rules:",
-    "- Do not repeat existing words.",
-    "- Use exactly one existing word in relatedTo.",
-    "- Prefer common educated English over obscure words.",
-    "- Mix synonyms, antonyms, related concepts, collocations, and idioms.",
-    "- Expand the learner's vocabulary network.",
-    "- reason must describe the relationship only.",
-    "- reason must be 5 words or fewer.",
-  ].join("\n");
+): Promise<SuggestedWordCard[]> {
+  if (USE_MOCK) {
+    console.log("Using MOCK Gemini data");
+    return generateMockRelatedWords();
+  }
+const prompt = [
+  "Recent vocabulary:",
+  ...recentWords.map(
+    (w) => `${w.term} — ${w.meaning}`
+  ),
+
+  "",
+
+  "Suggest exactly 5 useful new vocabulary items.",
+
+  "",
+
+  "For each suggested item return:",
+  "- relatedTo",
+  "- reason",
+  "- complete vocabulary card",
+
+  "",
+
+  "Vocabulary card requirements:",
+
+  "- The suggested item may be a word, phrase, idiom, phrasal verb, or technical term.",
+  "- Keep meaning short and dictionary-like.",
+  "- Keep plainEnglish simple and memorable.",
+  "- Return 2 to 4 natural example sentences.",
+  "- Return 0 to 8 useful synonyms or close alternatives.",
+  "- Mnemonic should be vivid but concise.",
+  "- Etymology may be null if uncertain.",
+  "- Difficulty: 1 = common/easy, 5 = advanced/rare.",
+  "- normalized should be lowercase and whitespace-collapsed.",
+
+  "",
+
+  "Rules:",
+
+  "- Do not repeat existing words.",
+  "- Use exactly one existing word in relatedTo.",
+  "- Prefer common educated English over obscure words.",
+  "- Mix synonyms, antonyms, related concepts, collocations, and idioms.",
+  "- Expand the learner's vocabulary network.",
+  "- reason must describe the relationship only.",
+  "- reason must be 5 words or fewer.",
+
+  "",
+
+  "Return high-quality learning cards that are ready to be saved directly into a vocabulary database."
+].join("\n");
 
   const response = await generateWithFallback({
     contents: prompt,
     config: {
       responseMimeType: "application/json",
       responseSchema: relatedWordsResponseSchema,
-      temperature: 0.8,
+      temperature: 0.4,
     },
   });
 
@@ -285,7 +383,9 @@ export async function generateRelatedWords(
   return parsed.words.filter(
     (word) =>
       !existing.has(
-        word.term.trim().toLowerCase()
+        word.entry.term
+          .trim()
+          .toLowerCase()
       )
   );
 }
@@ -295,6 +395,10 @@ export async function generateVocabEntry(input: {
   normalized: string;
   sourceText?: string | null;
 }): Promise<VocabEntry> {
+  if (USE_MOCK) {
+    console.log("Using MOCK vocab entry");
+    return createMockVocabEntry(input.term);
+  }
   const prompt = [
     "Generate a concise vocabulary learning card.",
     "",

@@ -23,72 +23,109 @@ import {
 import type {
   VocabEntry,
 } from "@/lib/vocab-generator";
-import { LoadingLinkButton } from "./loading-link-button";
+import { getDifficultyBadge } from "./utils/utils";
+import { useRouter } from "next/navigation";
 
 type QueueWord = {
-  term: string;
   relatedTo: string;
   reason: string;
+
+  entry: VocabEntry;
 };
 
 export function SuggestedWordsDeck() {
-  const [queue, setQueue] = useState<
-    QueueWord[]
-  >([]);
+const [queue, setQueue] = useState<QueueWord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
 
-  const [entry, setEntry] =
-    useState<VocabEntry | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [initialCount, setInitialCount] = useState(0);
+  const [completed, setCompleted] = useState(0);
 
-  const [saving, setSaving] =
-    useState(false);
+  const current = queue.length > 0 ? queue[0] : null;
 
-    const [initialCount, setInitialCount] =
-  useState(0);
-
-  const [completed, setCompleted] =
-    useState(0);
+  const router = useRouter();
 
   useEffect(() => {
-    const stored =
-      sessionStorage.getItem(
-        "suggestedWords"
-      );
+    router.prefetch("/suggested-words/learn");
+    router.prefetch("/suggested-words");
+  }, [router]);
+
+  /**
+   * ✅ FIX: Handle iOS / Safari / Chrome back-forward cache correctly
+   * Prevents loading state + stale UI on swipe navigation
+   */
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        // restored from bfcache → DO NOT show loader again
+        setLoading(false);
+        setIsExiting(false);
+      }
+    };
+
+    const handlePageHide = () => {
+      // mark that we are leaving page cleanly
+      // helps prevent weird rehydration flickers
+      setIsExiting(false);
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, []);
+
+useEffect(() => {
+  try {
+    const stored = sessionStorage.getItem("suggestedWords");
 
     if (!stored) {
       setLoading(false);
       return;
     }
 
-    const parsed =
-      JSON.parse(stored);
+    const parsed: QueueWord[] = JSON.parse(stored);
+
     setInitialCount(parsed.length);
-
     setQueue(parsed);
-  }, []);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
-  useEffect(() => {
-    if (
-      queue.length === 0 ||
-      entry
-    ) {
-      setLoading(false);
-      return;
-    }
 
-    loadWord(queue[0].term);
-  }, [queue]);
+function nextCard() {
+  setIsExiting(true);
 
-  async function loadWord(
-    term: string
-  ) {
-    try {
-      setLoading(true);
+  const rest = queue.slice(1);
 
-      const response = await fetch(
-        "/api/lookup",
+  setTimeout(() => {
+    setQueue(rest);
+    setIsExiting(false); // reset AFTER animation
+  }, 250); // match your CSS duration
+
+  sessionStorage.setItem(
+    "suggestedWords",
+    JSON.stringify(rest)
+  );
+
+  setCompleted((value) => value + 1);
+}
+
+ async function addWord() {
+  if (!current) return;
+
+  try {
+    setSaving(true);
+
+    const response =
+      await fetch(
+        "/api/words",
         {
           method: "POST",
           headers: {
@@ -96,77 +133,30 @@ export function SuggestedWordsDeck() {
               "application/json",
           },
           body: JSON.stringify({
-            term,
+            entry:
+              current.entry,
           }),
         }
       );
 
-      const data =
-        await response.json();
-
-      if (
-        response.ok &&
-        data.entry
-      ) {
-        setEntry(data.entry);
-      }
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      return;
     }
+
+    nextCard();
+  } finally {
+    setSaving(false);
   }
+}
 
-  function nextCard() {
-    const rest =
-      queue.slice(1);
-
-    setQueue(rest);
-
-    sessionStorage.setItem(
-      "suggestedWords",
-      JSON.stringify(rest)
-    );
-
-    setEntry(null);
-
-    setCompleted(
-      (value) => value + 1
-    );
-  }
-
-  async function addWord() {
-    if (!entry) return;
-
-    try {
-      setSaving(true);
-
-      const response =
-        await fetch(
-          "/api/words",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              entry,
-            }),
-          }
-        );
-
-      if (!response.ok) {
-        return;
-      }
-
-      nextCard();
-    } finally {
-      setSaving(false);
-    }
-  }
   const progress =
   initialCount === 0
     ? 0
     : (completed / initialCount) * 100;
+
+  const difficultyBadge = getDifficultyBadge(
+    current?.entry.difficulty ?? null
+  );
 
   if (!loading && queue.length === 0) {
     return (
@@ -215,19 +205,12 @@ export function SuggestedWordsDeck() {
             >
             Your selected words have been reviewed.
             </div>
-
-            <LoadingLinkButton
-            href="/"
-            className="mt-5 w-full"
-            >
-            Back Home
-            </LoadingLinkButton>
         </CardContent>
         </Card>
     );
     }
 
-  if (loading || !entry) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="py-12">
@@ -236,11 +219,15 @@ export function SuggestedWordsDeck() {
           </div>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
-            Generating vocabulary card...
+            Loading vocabulary card...
           </p>
         </CardContent>
       </Card>
     );
+  }
+
+  if (!current) {
+    return null;
   }
 
   return (
@@ -305,28 +292,54 @@ export function SuggestedWordsDeck() {
         ) : null}
         </div>
 
-      <Card>
+      <Card className={[
+          `
+          transition-all
+          duration-300
+          ease-out
+          will-change-transform
+          relative
+          overflow-hidden
+          
+          before:absolute
+          before:inset-0
+          before:bg-gradient-to-br
+          before:via-transparent
+          before:to-muted/10
+          before:opacity-70
+          before:pointer-events-none
+          `,
+          current?.entry.difficulty === 1
+          ? "before:bg-emerald-500/5"
+          : current?.entry.difficulty === 2
+          ? "before:bg-sky-500/5"
+          : current?.entry.difficulty === 3
+          ? "before:bg-violet-500/5"
+          : current?.entry.difficulty === 4
+          ? "before:bg-pink-500/5"
+          : current?.entry.difficulty === 5
+          ? "before:bg-rose-500/5"
+          : "before:bg-primary/5",
+            isExiting
+            ? "-translate-x-24 rotate-[-10deg] scale-[0.94] opacity-0 blur-[1px]"
+            : "translate-x-0 rotate-0 scale-100 opacity-100 blur-0",
+        ].join(" ")}>
         <CardHeader>
           <CardTitle className="text-3xl">
-            {entry.term}
+            {current?.entry.term}
           </CardTitle>
 
           <div className="flex gap-2">
             <Badge variant="secondary">
-              {entry.kind.replaceAll(
+              {current?.entry.kind.replaceAll(
                 "_",
                 " "
               )}
             </Badge>
 
-            {entry.difficulty ? (
-              <Badge
-                variant="outline"
-              >
-                Difficulty{" "}
-                {
-                  entry.difficulty
-                }
+            {current?.entry.difficulty ? (
+              <Badge variant="outline" className={difficultyBadge.className}>
+                {difficultyBadge.label}
               </Badge>
             ) : null}
           </div>
@@ -338,22 +351,22 @@ export function SuggestedWordsDeck() {
               Meaning
             </p>
 
-            <p>{entry.meaning}</p>
+            <p>{current?.entry.meaning}</p>
           </div>
 
-          {entry.plainEnglish ? (
+          {current?.entry.plainEnglish ? (
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 Plain English
               </p>
 
               <p>
-                {entry.plainEnglish}
+                {current?.entry.plainEnglish}
               </p>
             </div>
           ) : null}
 
-          {entry.examples
+          {current?.entry.examples
             ?.length ? (
             <div>
               <p className="text-sm font-medium text-muted-foreground">
@@ -361,7 +374,7 @@ export function SuggestedWordsDeck() {
               </p>
 
               <ul className="mt-2 list-disc pl-5 text-sm">
-                {entry.examples
+                {current?.entry.examples
                   .slice(0, 3)
                   .map(
                     (
@@ -383,10 +396,10 @@ export function SuggestedWordsDeck() {
             </div>
           ) : null}
 
-          {entry.synonyms
+          {current?.entry.synonyms
             ?.length ? (
             <div className="flex flex-wrap gap-2">
-              {entry.synonyms
+              {current?.entry.synonyms
                 .slice(0, 6)
                 .map(
                   (
@@ -408,14 +421,14 @@ export function SuggestedWordsDeck() {
             </div>
           ) : null}
 
-          {entry.mnemonic ? (
+          {current?.entry.mnemonic ? (
             <div>
               <p className="text-sm font-medium text-muted-foreground">
                 Memory trick
               </p>
 
               <p>
-                {entry.mnemonic}
+                {current?.entry.mnemonic}
               </p>
             </div>
           ) : null}

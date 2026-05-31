@@ -5,13 +5,13 @@ import { ArrowLeft } from "lucide-react";
 export default function SuggestedWordsPage() {
   return (
     <main className="flex min-h-screen bg-background px-4 py-6">
-      <div className="mx-auto w-full max-w-md">
+      <div className="mx-auto w-full max-w-lg">
         <header className="flex items-center gap-3">
         <LoadingLinkButton
             href="/"
             variant="outline"
             size="sm"
-            className="inline-flex items-center gap-2"
+            className="inline-flex cursor-pointer items-center gap-2"
         >
             <>
             <ArrowLeft className="h-4 w-4" />
