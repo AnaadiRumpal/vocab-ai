@@ -24,6 +24,7 @@ export async function POST() {
       userId: session.user.id,
       status: {
             in: [
+            WordStatus.NEW,
             WordStatus.LEARNING,
             WordStatus.REVIEWING,
             WordStatus.MASTERED,
@@ -33,7 +34,7 @@ export async function POST() {
     orderBy: {
       createdAt: "desc",
     },
-    take: 40,
+    take: 20,
     select: {
       term: true,
       meaning: true,
