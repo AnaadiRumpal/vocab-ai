@@ -46,7 +46,7 @@ export async function POST() {
       {
         ok: false,
         error:
-          "Need at least 5 learned words.",
+          "Need at least 5 words.",
       },
       {
         status: 400,
